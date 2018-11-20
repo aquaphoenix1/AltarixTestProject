@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">AltarixTestApplication</string>
+    <!--<string name="strings_api_key">62b90426-d6de-4f4c-a33a-8dbbc8588fab</string>-->
+    <string name="title_activity_maps">Map</string>
+    <string name="strings_api_key">AIzaSyCmKmY5c5x5lvSMhmrCwHYSxhJvJz5G_Sk</string>
 </resources>
