@@ -1,28 +1,30 @@
 package com.example.aqua_phoenix.altarixtestapplication.repository
 
-import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.MutableLiveData
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
-import android.os.Environment
 import com.example.aqua_phoenix.altarixtestapplication.App
-import com.example.aqua_phoenix.altarixtestapplication.MainActivity
+import com.example.aqua_phoenix.altarixtestapplication.R
 import com.example.aqua_phoenix.altarixtestapplication.entites.PlaceInfo
-import com.google.android.gms.location.places.Places
+import com.example.aqua_phoenix.altarixtestapplication.entites.PlaceInformation
+import com.example.aqua_phoenix.altarixtestapplication.entites.getDefaultPlace
+import com.example.aqua_phoenix.altarixtestapplication.http.PlaceInformationRetrofit
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
 
 object PlacesRepository {
     private val placeInfoDAO by lazy {
         App.placeInfoDB.getPlaceInfoDB()
     }
 
-    fun getPlaceInfo(placeInfoId: String, context: Context): LiveData<PlaceInfo> {
+    private val liveData = MutableLiveData<PlaceInfo>()
+
+    fun getPlaceInfo(placeInfoId: String, context: Context): MutableLiveData<PlaceInfo> {
         refreshPlaceInfo(placeInfoId, context)
-        return placeInfoDAO.load(placeInfoId)
+        return liveData//placeInfoDAO.load(placeInfoId)
     }
 
     private fun refreshPlaceInfo(placeInfoId: String, context: Context) {
@@ -30,86 +32,70 @@ object PlacesRepository {
             val hasPlaceInfo = placeInfoDAO.hasPlaceInfo(placeInfoId) > 0
 
             if (!hasPlaceInfo) {
-                Places.getGeoDataClient(context).getPlaceById(placeInfoId)
-                    .addOnCompleteListener { p0 ->
-                        if (p0.isSuccessful) {
-                            val places = p0.result
-                            if (places != null) {
-                                val place = places.get(0)
+                PlaceInformationRetrofit.placeInformationApi.getPlaceInformation(
+                    placeInfoId,
+                    "name,rating,formatted_phone_number,photo,type,url,address_component,geometry",
+                    context.getString(R.string.strings_api_key)
+                ).enqueue(object : Callback<PlaceInformation> {
+                    override fun onFailure(call: Call<PlaceInformation>, t: Throwable) {
+                        liveData.postValue(getDefaultPlace(context))
+                    }
 
-                                /*if (placeDetailsFragment != null) {
-                                    deleteFragment(placeDetailsFragment!!, supportFragmentManager)
-                                }
+                    override fun onResponse(call: Call<PlaceInformation>, response: Response<PlaceInformation>) {
+                        if (response.isSuccessful) {
+                            response.body()?.let { placeInformation ->
+                                placeInformation.result?.let { result ->
+                                    GlobalScope.launch {
+                                        val types: String = result.types?.joinToString(separator = " ")
 
-                                placeDetailsFragment = PlaceDetailsFragment()
-
-                                val bundle = Bundle()
-                                bundle.putCharSequence("address", place.address)
-
-                                placeDetailsFragment!!.arguments = bundle
-
-                                //deleteFragment()
-
-                                replaceFragment(
-                                    R.id.main_fragment_layout,
-                                    placeDetailsFragment!!, supportFragmentManager
-                                )*/
-
-                                //var placeInfo = PlaceInfo(placeInfoId, place.address.toString())
-
-                                places.release()
-
-                                Places.getGeoDataClient(context).getPlacePhotos(placeInfoId)
-                                    .addOnCompleteListener { task ->
-                                        if (task.isSuccessful) {
-                                            // Get the list of photos.
-                                            val photos = task.result
-                                            // Get the PlacePhotoMetadataBuffer (metadata for all of the photos).
-                                            val photoMetadataBuffer = photos!!.photoMetadata
-                                            // Get the first photo in the list.
-                                            try {
-                                                val photoMetadata = photoMetadataBuffer.get(0)
-
-                                                // Get the attribution text.
-                                                val attribution = photoMetadata.attributions
-                                                // Get a full-size bitmap for the photo.
-                                                val photoResponse =
-                                                    Places.getGeoDataClient(context).getPhoto(photoMetadata)
-                                                photoResponse.addOnCompleteListener { task ->
-                                                    val photo = task.result
-                                                    val bitmap = photo!!.bitmap
-
-                                                    val file = File(
-                                                        Environment.getExternalStoragePublicDirectory(
-                                                            Environment.DIRECTORY_PICTURES
-                                                        ), "$placeInfoId.jpg"
-                                                    )
-
-                                                    val stream: OutputStream = FileOutputStream(file)
-                                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-                                                    stream.flush()
-                                                    stream.close()
-
-                                                    //placeDetailsFragment!!.setImage(bitmap)
-                                                    placeInfoDAO.save(
-                                                        PlaceInfo(
-                                                            placeInfoId,
-                                                            place.address.toString(),
-                                                            Uri.parse(file.absolutePath)
-                                                        )
-                                                    )
-                                                }
-                                            } catch (e: Exception) {
-                                                //placeDetailsFragment!!.setDefaultImage()
-                                                placeInfoDAO.save(PlaceInfo(placeInfoId, place.address.toString()))
-                                            }
+                                        var address = ""
+                                        result.address_components.forEach {
+                                            address += it.short_name + " "
                                         }
+
+                                        if (address.isNotEmpty()) {
+                                            address = address.substring(0, address.length - 1)
+                                        }
+
+                                        val place = PlaceInfo(
+                                            placeInfoId,
+                                            address = if (address.isNotEmpty()) address else context.getString(R.string.defaultAddress),
+                                            name = if (result.name.isNotEmpty()) result.name else context.getString(R.string.defaultName),
+                                            types = if (types.isNotEmpty()) types else context.getString(R.string.defaultTypes),
+                                            url = if (result.url.isNotEmpty()) result.url else context.getString(R.string.defaultURL),
+                                            raiting = if (result.rating.toString().isNotEmpty()) result.rating.toString() else context.getString(
+                                                R.string.defaultRating
+                                            ),
+                                            phone = if (result.formatted_phone_number.isNotEmpty()) result.formatted_phone_number else context.getString(
+                                                R.string.defaultPhone
+                                            ),
+                                            imagePath = if (result.photos != null && result.photos[0] != null && result.photos[0].photo_reference.isNotEmpty())
+                                                "${PlaceInformationRetrofit.BASE_URL_GET_PLACE_ADDRESS}photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${context.getString(
+                                                    R.string.strings_api_key
+                                                )}"
+                                            else null,
+                                            geometry = if(result.geometry != null && result.geometry.location != null) result.geometry.location.toString() else null
+                                        )
+
+                                        placeInfoDAO.save(
+                                            place
+                                        )
+
+                                        liveData.postValue(place)
                                     }
+                                } ?: run {
+                                    liveData.postValue(getDefaultPlace(context))
+                                }
+                            } ?: run {
+                                liveData.postValue(getDefaultPlace(context))
                             }
                         }
+
                     }
+                })
+            } else {
+                liveData.postValue(placeInfoDAO.load(placeInfoId))
             }
         }
     }
-
 }

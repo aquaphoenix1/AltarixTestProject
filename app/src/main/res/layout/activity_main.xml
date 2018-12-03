@@ -8,14 +8,37 @@
         tools:context=".MainActivity"
         android:id="@+id/mainLayout">
 
-    <FrameLayout android:layout_height="match_parent"
-                 android:layout_width="match_parent"
-            android:id="@+id/main_fragment_layout">
+
+    <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottie_splash_screen"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:lottie_fileName="updating_map.json"
+            app:lottie_loop="false"
+            app:lottie_autoPlay="false"
+            android:visibility="gone"/>
+
+    <FrameLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:id="@+id/main_fragment_layout"
+            android:visibility="gone">
+
         <fragment
                 android:tag="mapFragment"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:name="com.example.aqua_phoenix.altarixtestapplication.GoogleMapsFragment"
-                android:id="@+id/google_map"/>
+                android:name="com.example.aqua_phoenix.altarixtestapplication.fragments.GoogleMapsFragment"
+                android:id="@+id/google_map">
+        </fragment>
+
+        <fragment
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.example.aqua_phoenix.altarixtestapplication.fragments.FilterFragment"
+                android:id="@+id/filter">
+        </fragment>
+
+        <include layout="@layout/fragment_place_details"/>
     </FrameLayout>
 </android.support.constraint.ConstraintLayout>

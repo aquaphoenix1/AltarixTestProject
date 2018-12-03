@@ -1,6 +1,24 @@
 <resources>
     <string name="app_name">AltarixTestApplication</string>
-    <!--<string name="strings_api_key">62b90426-d6de-4f4c-a33a-8dbbc8588fab</string>-->
     <string name="title_activity_maps">Map</string>
     <string name="strings_api_key">AIzaSyCmKmY5c5x5lvSMhmrCwHYSxhJvJz5G_Sk</string>
+    <string name="defaultAddress">невозможно найти адрес</string>
+    <string name="defaultName">невозможно найти название</string>
+    <string name="defaultTypes">невозможно найти типы</string>
+    <string name="defaultURL">невозможно найти url</string>
+    <string name="defaultRating">невозможно найти рейтинг</string>
+    <string name="defaultPhone">невозможно найти телефон</string>
+    <string name="loadText">Выполняется загрузка</string>
+    <string name="column_name">Название</string>
+    <string name="column_address">Адрес</string>
+    <string name="column_types">Типы</string>
+    <string name="column_url">URL</string>
+    <string name="columnRating">Рейтинг</string>
+    <string name="column_phone">Телефон</string>
+    <string name="strings_source">Маршрут из</string>
+    <string name="strings_destination">Маршрут в</string>
+    <string name="strings_find_path">Построить маршрут</string>
+    <string name="filter_string">Фильтр</string>
+    <string name="parks_string">Парки</string>
+    <string name="business_string">Бизнес</string>
 </resources>

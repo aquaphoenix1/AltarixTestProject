@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                             xmlns:app="http://schemas.android.com/apk/res-auto"
+                                             android:layout_width="match_parent"
+                                             android:layout_height="match_parent"
+                                             android:gravity="bottom|right">
+
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom|right"
+            android:paddingBottom="40dp"
+            android:id="@+id/filter_checkboxes_layout"
+            android:visibility="gone">
+
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="parent"
+                app:layout_constraintBottom_toTopOf="parent">
+
+            <CheckBox
+                    android:text="@string/business_string"
+                    style="@style/checkBoxPOI"
+                    android:id="@+id/checkBoxBusiness"/>
+
+            <CheckBox
+                    android:text="@string/parks_string"
+                    style="@style/checkBoxPOI"
+                    android:id="@+id/checkBoxParks"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <Button
+            android:text="@string/filter_string"
+            android:layout_height="wrap_content"
+            android:id="@+id/filterButton"
+            android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_width="wrap_content"
+            android:background="@android:color/transparent"/>
+</android.support.constraint.ConstraintLayout>

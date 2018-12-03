@@ -17,17 +17,25 @@ fun changeSplashScreenFragment(
 }
 
 fun deleteFragment(removedFragment: Fragment, fragmentManager: FragmentManager) {
-    fragmentManager.
-        beginTransaction()
+    fragmentManager.beginTransaction()
         .remove(removedFragment)
         .commit()
 }
 
 fun replaceFragment(@IdRes containerId: Int, addFragment: Fragment, fragmentManager: FragmentManager) {
-    fragmentManager.
-        beginTransaction()
+    fragmentManager.beginTransaction()
         //.replace(containerId, addFragment)
         .add(containerId, addFragment)
         .addToBackStack(null)
+        .commit()
+}
+
+fun addFragment(
+    @IdRes containerId: Int,
+    addFragment: Fragment,
+    fragmentManager: FragmentManager
+) {
+    fragmentManager.beginTransaction()
+        .replace(containerId, addFragment)
         .commit()
 }

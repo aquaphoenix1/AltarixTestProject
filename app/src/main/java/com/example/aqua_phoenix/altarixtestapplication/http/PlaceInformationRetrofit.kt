@@ -9,11 +9,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-object Api {
-    val BASE_URL_GET_PLACE_ADDRESS = "maps.googleapis.com/maps/api/geocode/"
-    val USE_HTTPS_GET_PLACE_ADDRESS = true
+object PlaceInformationRetrofit {
 
-    val url = "${if (USE_HTTPS_GET_PLACE_ADDRESS) "https" else "http"}://${BASE_URL_GET_PLACE_ADDRESS}"
+    var BASE_URL_GET_PLACE_ADDRESS = "maps.googleapis.com/maps/api/place/"
+    get() {
+        return "${if (USE_HTTPS_GET_PLACE_ADDRESS) "https" else "http"}://$field"
+    }
+    const val USE_HTTPS_GET_PLACE_ADDRESS = true
+
 
     lateinit var placeInformationApi: PlaceInformationApi
 
@@ -38,12 +41,8 @@ object Api {
 
         //val apiKey= "@string/strings_api_key"
 
-        var getUrl = url
-        getUrl+="latlng=40,40&key=AIzaSyCmKmY5c5x5lvSMhmrCwHYSxhJvJz5G_Sk"
-        Log.d("11111111111111111111111", getUrl)
-
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://maps.googleapis.com/maps/api/place/details/")
+            .baseUrl(BASE_URL_GET_PLACE_ADDRESS)
             .client(okHttpClient)
             .addConverterFactory(gsonConverterFactory)
             .build()
