@@ -14,17 +14,16 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
 object PlacesRepository {
     private val placeInfoDAO by lazy {
         App.placeInfoDB.getPlaceInfoDB()
     }
 
-    private val liveData = MutableLiveData<PlaceInfo>()
+    private val placeInfoMutableLifeData = MutableLiveData<PlaceInfo>()
 
     fun getPlaceInfo(placeInfoId: String, context: Context): MutableLiveData<PlaceInfo> {
         refreshPlaceInfo(placeInfoId, context)
-        return liveData//placeInfoDAO.load(placeInfoId)
+        return placeInfoMutableLifeData
     }
 
     private fun refreshPlaceInfo(placeInfoId: String, context: Context) {
@@ -38,7 +37,7 @@ object PlacesRepository {
                     context.getString(R.string.strings_api_key)
                 ).enqueue(object : Callback<PlaceInformation> {
                     override fun onFailure(call: Call<PlaceInformation>, t: Throwable) {
-                        liveData.postValue(getDefaultPlace(context))
+                        placeInfoMutableLifeData.postValue(getDefaultPlace(context))
                     }
 
                     override fun onResponse(call: Call<PlaceInformation>, response: Response<PlaceInformation>) {
@@ -60,13 +59,17 @@ object PlacesRepository {
                                         val place = PlaceInfo(
                                             placeInfoId,
                                             address = if (address.isNotEmpty()) address else context.getString(R.string.defaultAddress),
-                                            name = if (result.name.isNotEmpty()) result.name else context.getString(R.string.defaultName),
+                                            name = if (result.name != null && result.name.isNotEmpty()) result.name else context.getString(
+                                                R.string.defaultName
+                                            ),
                                             types = if (types.isNotEmpty()) types else context.getString(R.string.defaultTypes),
-                                            url = if (result.url.isNotEmpty()) result.url else context.getString(R.string.defaultURL),
-                                            raiting = if (result.rating.toString().isNotEmpty()) result.rating.toString() else context.getString(
+                                            url = if (result.url != null && result.url.isNotEmpty()) result.url else context.getString(
+                                                R.string.defaultURL
+                                            ),
+                                            raiting = if (result.rating != null && result.rating.toString().isNotEmpty()) result.rating.toString() else context.getString(
                                                 R.string.defaultRating
                                             ),
-                                            phone = if (result.formatted_phone_number.isNotEmpty()) result.formatted_phone_number else context.getString(
+                                            phone = if (result.formatted_phone_number != null && result.formatted_phone_number.isNotEmpty()) result.formatted_phone_number else context.getString(
                                                 R.string.defaultPhone
                                             ),
                                             imagePath = if (result.photos != null && result.photos[0] != null && result.photos[0].photo_reference.isNotEmpty())
@@ -74,27 +77,27 @@ object PlacesRepository {
                                                     R.string.strings_api_key
                                                 )}"
                                             else null,
-                                            geometry = if(result.geometry != null && result.geometry.location != null) result.geometry.location.toString() else null
+                                            geometry = if (result.geometry != null && result.geometry.location != null) result.geometry.location.toString() else null
                                         )
 
                                         placeInfoDAO.save(
                                             place
                                         )
 
-                                        liveData.postValue(place)
+                                        placeInfoMutableLifeData.postValue(place)
                                     }
                                 } ?: run {
-                                    liveData.postValue(getDefaultPlace(context))
+                                    placeInfoMutableLifeData.postValue(getDefaultPlace(context))
                                 }
                             } ?: run {
-                                liveData.postValue(getDefaultPlace(context))
+                                placeInfoMutableLifeData.postValue(getDefaultPlace(context))
                             }
                         }
 
                     }
                 })
             } else {
-                liveData.postValue(placeInfoDAO.load(placeInfoId))
+                placeInfoMutableLifeData.postValue(placeInfoDAO.load(placeInfoId))
             }
         }
     }

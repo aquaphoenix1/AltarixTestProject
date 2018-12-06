@@ -41,6 +41,7 @@ class PlaceInfoViewModel : ViewModel() {
         }
 
         placeId = placeInfoId
+
         placeInfo = PlacesRepository.getPlaceInfo(placeInfoId, context)
     }
 

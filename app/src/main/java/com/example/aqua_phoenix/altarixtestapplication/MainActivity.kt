@@ -2,6 +2,7 @@ package com.example.aqua_phoenix.altarixtestapplication
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.res.Resources
 import android.location.Location
@@ -304,12 +305,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
     }
 
     private fun showDetailedInfo(placeId: String = "") {
+        clearPlaceInfo()
+
         val slide = Slide()
         slide.duration = 0
         slide.slideEdge = LEFT
 
         if (!placeId.isEmpty()) {
-            clearPlaceInfo()
             initPlaceInfoViewModel(placeId)
             slide.duration = 1000
         } else {
@@ -325,9 +327,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun initPlaceInfoViewModel(placeId: String) {
         placeInfoViewModel.init(placeId, applicationContext)
-        placeInfoViewModel.getPlaceInfo()?.observe(this, android.arch.lifecycle.Observer {
-            refreshUI(it)
-        })
+
+        placeInfoViewModel.getPlaceInfo()?.let {
+            if (!it.hasObservers()) {
+                it.observe(this, Observer<PlaceInfo> { placeInfo ->
+                    refreshUI(placeInfo)
+                })
+            }
+        }
     }
 
     private fun requestGPS() {
