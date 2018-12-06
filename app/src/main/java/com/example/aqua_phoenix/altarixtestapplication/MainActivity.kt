@@ -12,10 +12,7 @@ import android.support.transition.Slide
 import android.support.transition.TransitionManager
 import android.support.transition.TransitionSet
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ContextThemeWrapper
-import android.support.v7.widget.PopupMenu
 import android.view.Gravity.LEFT
-import android.view.MenuItem
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
@@ -29,66 +26,54 @@ import com.example.aqua_phoenix.altarixtestapplication.entites.PlaceInfo
 import com.example.aqua_phoenix.altarixtestapplication.fragments.GoogleMapsFragment
 import com.example.aqua_phoenix.altarixtestapplication.viewmodel.PlaceInfoViewModel
 import com.google.android.gms.location.*
-import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.OnCameraMoveStartedListener.REASON_DEVELOPER_ANIMATION
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.*
-import com.google.maps.model.DirectionsResult
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_place_details.*
+import kotlinx.android.synthetic.main.place_details_layout.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.PermissionRequest
 
-
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var rootDetailsLayout: LinearLayout
+    private var comeWithSource = true
+
+    @BindView(R.id.checkBoxParks)
+    lateinit var parksCheckbox: CheckBox
+
+    @BindView(R.id.checkBoxBusiness)
+    lateinit var businessCheckbox: CheckBox
+
+    @BindView(R.id.filter_checkboxes_layout)
+    lateinit var filterCheckboxesLayout: LinearLayout
+
+    @BindView(R.id.filterButton)
+    lateinit var filterButton: Button
+
+    private lateinit var placeInfoViewModel: PlaceInfoViewModel
 
     companion object {
         const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     }
 
-    private var comeWithSource = true
-
-    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
-        requestGPS()
-    }
-
-    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
-        GPSPermissionEnabled()
-    }
-
     override fun onBackPressed() {
         if (rootDetailsLayout.visibility == View.VISIBLE) {
-            rootDetailsLayout.visibility = View.INVISIBLE
+            rootDetailsLayout.visibility = View.GONE
         } else {
             super.onBackPressed()
         }
     }
-
-    private fun requestGPS() {
-        EasyPermissions.requestPermissions(
-            PermissionRequest.Builder(
-                this,
-                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-                .setRationale("Разрешение для поиска пользователя на карте")
-                .setNegativeButtonText("Нет")
-                .setPositiveButtonText("Да")
-                .build()
-        )
-    }
-
-    private lateinit var placeInfoViewModel: PlaceInfoViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,11 +87,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         placeInfoViewModel = ViewModelProviders.of(this).get(PlaceInfoViewModel::class.java)
 
-        if(!placeInfoViewModel.isLoaded()){
+        if (!placeInfoViewModel.isLoaded()) {
             lottie_splash_screen.visibility = VISIBLE
             lottie_splash_screen.playAnimation()
-        }
-        else{
+        } else {
             main_fragment_layout.visibility = VISIBLE
         }
 
@@ -117,43 +101,66 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         }
     }
 
+    override fun onMapReady(googleMap: GoogleMap) {
+        if (!placeInfoViewModel.isInitializedPlaceInfo()) {
+            GlobalScope.launch {
+                Thread.sleep(3000)
+                runOnUiThread {
+                    placeInfoViewModel.setLoaded()
+                    main_fragment_layout.visibility = VISIBLE
+                    lottie_splash_screen.cancelAnimation()
+                    lottie_splash_screen.visibility = GONE
+                }
+            }
+        }
+
+        mMap = googleMap
+
+        mMap.isBuildingsEnabled = true
+        mMap.isIndoorEnabled = true
+
+        mMap.setOnPoiClickListener { pointOfInterest ->
+            pointOfInterest?.let {
+                showDetailedInfo(it.placeId)
+            }
+        }
+
+        mMap.setOnMapClickListener {
+            if (rootDetailsLayout.visibility == View.VISIBLE) {
+                hideDetailedInfo()
+            }
+        }
+
+        methodRequiresPerm()
+
+        filterMap(placeInfoViewModel.getFilteredJson())
+    }
+
     private fun getVisibleJson(name: String, value: String): String {
         return "{\"featureType\": \"poi.$name\",\"stylers\":[{\"visibility\":\"$value\"}]}"
     }
 
-    @BindView(R.id.checkBoxParks)
-    lateinit var parksCheckbox: CheckBox
-
-    @BindView(R.id.checkBoxBusiness)
-    lateinit var businessCheckbox: CheckBox
-
     private fun getFilterJson(): String {
         var json = "["
 
-        if (parksCheckbox.isChecked) {
-            json += getVisibleJson("park", "on")
+        json += if (parksCheckbox.isChecked) {
+            getVisibleJson("park", "on")
         } else {
-            json += getVisibleJson("park", "off")
+            getVisibleJson("park", "off")
         }
 
         json += ','
 
-        if (businessCheckbox.isChecked) {
-            json += getVisibleJson("business", "on")
+        json += if (businessCheckbox.isChecked) {
+            getVisibleJson("business", "on")
         } else {
-            json += getVisibleJson("business", "off")
+            getVisibleJson("business", "off")
         }
 
         json += ']'
 
         return json
     }
-
-    @BindView(R.id.filter_checkboxes_layout)
-    lateinit var filterCheckboxesLayout: LinearLayout
-
-    @BindView(R.id.filterButton)
-    lateinit var filterButton: Button
 
     @OnClick(R.id.filterButton)
     fun setFilter() {
@@ -170,11 +177,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
     private fun filterMap(json: String?) {
         try {
-            json?.let{
+            json?.let {
                 mMap.setMapStyle(
                     MapStyleOptions(json)
                 )
-            } ?: run{
+            } ?: run {
                 mMap.setMapStyle(
                     MapStyleOptions.loadRawResourceStyle(
                         this, R.raw.style
@@ -183,7 +190,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
             }
 
         } catch (e: Resources.NotFoundException) {
-            e.printStackTrace()
+            Snackbar.make(rootLayout, "Ошибка фильтрации", 2000).show()
         }
     }
 
@@ -191,24 +198,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         fun animateCamera(location: Location) {
             val latLng = LatLng(location.latitude, location.longitude)
             val cameraPosition = CameraPosition.Builder()
-                .target(latLng)      // Sets the center of the map to Mountain View
-                .zoom(17f)                   // Sets the zoom
-                .bearing(0f)                // Sets the orientation of the camera to east
-                .tilt(0f)                   // Sets the tilt of the camera to 30 degrees
-                .build()                   // Creates a CameraPosition from the builder
+                .target(latLng)
+                .zoom(17f)
+                .bearing(0f)
+                .tilt(0f)
+                .build()
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
         }
 
-        override fun onLocationResult(p0: LocationResult?) {
-            super.onLocationResult(p0)
+        override fun onLocationResult(locationResult: LocationResult?) {
+            super.onLocationResult(locationResult)
 
-            if (p0 != null) {
-                if (p0.lastLocation == null) {
-                    return
-                }
-
-                if (comeWithSource) {
-                    animateCamera(p0.lastLocation)
+            locationResult?.let {
+                locationResult.lastLocation?.let {
+                    if (comeWithSource) {
+                        animateCamera(locationResult.lastLocation)
+                    }
                 }
             }
         }
@@ -240,15 +245,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         startCurrentLocationUpdates()
-    }
-
-    @AfterPermissionGranted(PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
-    private fun methodRequiresPerm() {
-        if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            GPSPermissionEnabled()
-        } else {
-            requestGPS()
-        }
     }
 
     private fun startLottieAnimation() {
@@ -334,46 +330,40 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, EasyPermissions.Pe
         })
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        if(lottie_splash_screen.visibility == VISIBLE) {
-            GlobalScope.launch {
-                Thread.sleep(3000)
-                runOnUiThread {
-                    placeInfoViewModel.setLoaded()
-                    main_fragment_layout.visibility = VISIBLE
-                    lottie_splash_screen.cancelAnimation()
-                    lottie_splash_screen.visibility = GONE
-                }
-            }
+    private fun requestGPS() {
+        EasyPermissions.requestPermissions(
+            PermissionRequest.Builder(
+                this,
+                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+                .setRationale("Разрешение для поиска пользователя на карте")
+                .setNegativeButtonText("Нет")
+                .setPositiveButtonText("Да")
+                .build()
+        )
+    }
+
+    @AfterPermissionGranted(PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+    private fun methodRequiresPerm() {
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            GPSPermissionEnabled()
+        } else {
+            requestGPS()
         }
-
-        mMap = googleMap
-
-        mMap.isBuildingsEnabled = true
-        mMap.isIndoorEnabled = true
-
-        mMap.setOnPoiClickListener { p0 ->
-            if (p0 != null) {
-                val id = p0.placeId
-
-                showDetailedInfo(id)
-            }
-        }
-
-        mMap.setOnMapClickListener {
-            if (rootDetailsLayout.visibility == View.VISIBLE) {
-                hideDetailedInfo()
-            }
-        }
-
-        methodRequiresPerm()
-
-        filterMap(placeInfoViewModel.getFilteredJson())
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        requestGPS()
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        GPSPermissionEnabled()
     }
 
     /*private fun getEndLocationTitle(results: DirectionsResult): String {

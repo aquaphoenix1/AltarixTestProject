@@ -5,14 +5,13 @@ import android.arch.lifecycle.ViewModel
 import android.content.Context
 import com.example.aqua_phoenix.altarixtestapplication.entites.PlaceInfo
 import com.example.aqua_phoenix.altarixtestapplication.repository.PlacesRepository
-import com.google.maps.model.LatLng
 
 class PlaceInfoViewModel : ViewModel() {
     private var placeInfo: MutableLiveData<PlaceInfo>? = null
     private lateinit var placeId: String
 
-    private var fromId: String? = null
-    private var toId: String? = null
+    /*private var fromId: String? = null
+    private var toId: String? = null*/
 
     private var filteredJson: String? = null
 
@@ -57,7 +56,7 @@ class PlaceInfoViewModel : ViewModel() {
 
     fun getPlaceInfo() = placeInfo
 
-    fun setFrom() {
+    /*fun setFrom() {
         fromId = placeId
     }
 
@@ -67,5 +66,5 @@ class PlaceInfoViewModel : ViewModel() {
         toId = placeId
     }
 
-    fun getTo(): String? = toId
+    fun getTo(): String? = toId*/
 }

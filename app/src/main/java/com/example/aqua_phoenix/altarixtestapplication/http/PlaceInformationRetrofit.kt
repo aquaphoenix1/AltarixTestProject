@@ -1,6 +1,5 @@
 package com.example.aqua_phoenix.altarixtestapplication.http
 
-import android.util.Log
 import com.example.aqua_phoenix.altarixtestapplication.BuildConfig
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
@@ -10,13 +9,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object PlaceInformationRetrofit {
+    const val USE_HTTPS_GET_PLACE_ADDRESS = true
 
     var BASE_URL_GET_PLACE_ADDRESS = "maps.googleapis.com/maps/api/place/"
     get() {
         return "${if (USE_HTTPS_GET_PLACE_ADDRESS) "https" else "http"}://$field"
     }
-    const val USE_HTTPS_GET_PLACE_ADDRESS = true
-
 
     lateinit var placeInformationApi: PlaceInformationApi
 
@@ -38,8 +36,6 @@ object PlaceInformationRetrofit {
             .create()
 
         val gsonConverterFactory = GsonConverterFactory.create(gson)
-
-        //val apiKey= "@string/strings_api_key"
 
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL_GET_PLACE_ADDRESS)

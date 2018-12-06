@@ -39,6 +39,6 @@
                 android:id="@+id/filter">
         </fragment>
 
-        <include layout="@layout/fragment_place_details"/>
+        <include layout="@layout/place_details_layout"/>
     </FrameLayout>
 </android.support.constraint.ConstraintLayout>

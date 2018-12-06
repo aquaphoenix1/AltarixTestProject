@@ -3,9 +3,7 @@ package com.example.aqua_phoenix.altarixtestapplication.entites
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 import android.content.Context
-import android.net.Uri
 import com.example.aqua_phoenix.altarixtestapplication.R
-
 
 @Entity
 data class PlaceInfo(
@@ -19,7 +17,6 @@ data class PlaceInfo(
     var imagePath: String? = null,
     var geometry: String? = null
 )
-
 
 fun getDefaultPlace(context: Context): PlaceInfo {
     return PlaceInfo(
